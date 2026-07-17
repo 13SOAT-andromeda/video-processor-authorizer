@@ -1,11 +1,13 @@
 # Spec — video-processor-authorizer
 
-**Data:** 2026-07-11
+**Data:** 2026-07-11 (revisado 2026-07-16 — sem mudanças de comportamento, ver nota abaixo; ADR-011)
 **Status:** Draft — pronto para virar plano de implementação
 **Repo antigo de referência:** `tech-challenge-user-authorizer`
-**Spec guarda-chuva:** `docs/superpowers/specs/2026-07-11-video-processor-auth-infra-migration-design.md` (workspace raiz)
+**Spec guarda-chuva:** `docs/superpowers/specs/2026-07-11-video-processor-auth-infra-migration-design.md` (workspace raiz), atualizada em 2026-07-16
 
 > Este documento copia na íntegra `service-authorizer.md` (fonte: `Video Processing/specs/specs/`) e adiciona, na seção 9, o que é específico deste repositório (porta do código antigo, Terraform local, dependências).
+
+> **Nota da revisão 2026-07-16 (ADR-011):** as RFCs de `authentication`/`users-api` (signup público, verificação de email, admin bootstrap via seed) **não exigem nenhuma mudança neste serviço**. `authorizer` continua só validando assinatura/expiração do JWT e devolvendo `{userId, role}` no `context` — nenhuma lógica de autorização por rota/role é adicionada aqui. A checagem de `role administrator` nas rotas administrativas de `users-api` continua inteiramente no handler daquele serviço (defesa em profundidade, mesmo padrão já documentado na seção 4, item 5, abaixo). `video-processor-users-api`, por rodar atrás de uma integração `HTTP_PROXY`/ALB (não Lambda proxy), passou a validar o JWT por conta própria em vez de depender do `context` deste authorizer para obter `userId`/`role` — ver `video-processor-users-api`, seção 5.1. Esse authorizer continua sendo usado normalmente na borda do API Gateway para essas rotas, só não é mais a única fonte de `userId`/`role` para o serviço que roda em EKS.
 
 ---
 
