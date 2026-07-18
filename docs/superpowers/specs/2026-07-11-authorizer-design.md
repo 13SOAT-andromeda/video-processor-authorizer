@@ -58,7 +58,7 @@ Validar o JWT em toda requisição antes de chegar às Lambdas de negócio. É o
 
 ## 6. Dependências
 
-- Secrets Manager: `jwt-signing-key` (mesmo segredo usado por `authentication` para assinar).
+- Secrets Manager: `jwt-signing-key-${var.environment}` (mesmo segredo usado por `authentication` para assinar; nome atualizado — ver ADR-013, `docs/superpowers/specs/2026-07-18-jwt-secret-gateway-routes-design.md`).
 - Bibliotecas: `github.com/golang-jwt/jwt/v5`, SDK v2 (`secretsmanager` client).
 
 ## 7. IAM
@@ -88,10 +88,10 @@ Validar o JWT em toda requisição antes de chegar às Lambdas de negócio. É o
 ### 9.2 Terraform local (`terraform/` neste repo)
 
 - `aws_lambda_function` — instanciando o módulo `terraform-aws-modules/lambda/aws` (fonte: `iac-video-processor-infra`), **nome da função deve ser exatamente `video-processor-authorizer`** (contrato consumido por `iac-video-processor-gateway` via `data.aws_lambda_function`).
-- IAM policy: `secretsmanager:GetSecretValue` restrita ao ARN de `jwt-signing-key` — nenhuma outra permissão.
+- IAM policy: `secretsmanager:GetSecretValue` restrita ao ARN de `jwt-signing-key-${var.environment}` — nenhuma outra permissão.
 - Config: `memory 128MB`, `timeout 3s`, `arch arm64`.
 
 ### 9.3 Dependências
 
 - **Nenhuma dependência de dado** (não lê RDS nem DynamoDB) — pode ser implementado em paralelo a qualquer outro repo desta fase.
-- Depende apenas de `iac-video-processor-infra` existir (módulo Lambda) e do secret `jwt-signing-key` estar criado no Secrets Manager (mesmo segredo usado por `video-processor-authentication-api`).
+- Depende apenas de `iac-video-processor-infra` existir (módulo Lambda) e do secret `jwt-signing-key-${var.environment}` estar criado no Secrets Manager (mesmo segredo usado por `video-processor-authentication-api`).
