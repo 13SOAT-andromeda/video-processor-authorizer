@@ -1,0 +1,13 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+terraform.tfvars
+terraform.tfvars.json
+*.tfplan
+tfplan*.out
+
+# Agents
+.claude/
+.superpowers/
