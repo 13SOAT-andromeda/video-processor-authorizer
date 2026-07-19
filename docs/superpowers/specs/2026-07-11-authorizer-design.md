@@ -52,16 +52,18 @@ Validar o JWT em toda requisição antes de chegar às Lambdas de negócio. É o
 3. Valida `exp` (expiração) e `iat`; token expirado → nega.
 4. Não consulta banco de dados em nenhuma hipótese — decisão 100% baseada nos claims assinados.
 5. Propaga `userId` e `role` no `context` para os handlers de negócio lerem via evento da API Gateway (não confiar em nenhum outro header do cliente para isso).
+6. **(Adicionado 2026-07-19, verificado contra `video-processor-authentication-api/internal/core/domain/token.go`)** Rejeita token cujo claim customizado `typ` não seja exatamente `"session"` — `authentication-api` emite dois tipos de token com a mesma assinatura/formato (`session` e `verification`, TTL 1h/24h respectivamente); sem essa checagem, um token de verificação de email vazado poderia ser reaproveitado como sessão.
 
 ## 5. Casos de teste (tabela)
 
 | Caso | Entrada | Resultado esperado |
 |---|---|---|
-| Token válido, não expirado | JWT assinado corretamente | `isAuthorized: true` + context |
+| Token válido, não expirado | JWT assinado corretamente, `typ: "session"` | `isAuthorized: true` + context |
 | Token expirado | `exp` no passado | `isAuthorized: false` |
 | Assinatura inválida | JWT adulterado | `isAuthorized: false` |
 | Header ausente | sem `Authorization` | `isAuthorized: false` |
 | Claims faltando (`sub`/`role`) | JWT malformado | `isAuthorized: false` |
+| Token de verificação usado como sessão | JWT válido, `typ: "verification"` | `isAuthorized: false` |
 
 ## 6. Dependências
 
