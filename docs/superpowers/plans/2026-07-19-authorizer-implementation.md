@@ -995,9 +995,12 @@ module "authorizer_lambda" {
   memory_size   = 128
   timeout       = 3
 
+  # AWS_REGION is a Lambda-reserved environment variable name (auto-injected
+  # at runtime) — the API rejects it if set explicitly here, so it is
+  # deliberately omitted; internal/config.Load() reads the auto-injected
+  # value.
   environment_variables = {
     JWT_SIGNING_KEY_SECRET_NAME = data.aws_secretsmanager_secret.jwt_signing_key.name
-    AWS_REGION                  = var.region
   }
 
   # dev/LocalStack has no AWS Academy sandbox restriction — create a real
@@ -1154,9 +1157,12 @@ module "authorizer_lambda" {
   memory_size   = 128
   timeout       = 3
 
+  # AWS_REGION is a Lambda-reserved environment variable name (auto-injected
+  # at runtime) — the API rejects it if set explicitly here, so it is
+  # deliberately omitted; internal/config.Load() reads the auto-injected
+  # value.
   environment_variables = {
     JWT_SIGNING_KEY_SECRET_NAME = data.aws_secretsmanager_secret.jwt_signing_key.name
-    AWS_REGION                  = var.region
   }
 
   # AWS Academy sandbox does not allow creating custom IAM roles/policies in
