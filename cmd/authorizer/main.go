@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 
+	awstrace "github.com/DataDog/dd-trace-go/contrib/aws/aws-sdk-go-v2/v2/aws"
+	ddlambda "github.com/DataDog/dd-trace-go/contrib/aws/datadog-lambda-go/v2"
+	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-lambda-go/events"
@@ -22,8 +25,13 @@ func main() {
 
 	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(appConfig.AWSRegion))
 	if err != nil {
-		log.Fatalf("failed to load AWS config: %v", err)
+		utils.ErrorLogger.Printf("failed to load AWS config: %v", err)
+		os.Exit(1)
 	}
+	// Instruments every AWS SDK call made with awsCfg (here: Secrets
+	// Manager) as a span nested under the current trace — gives call-level
+	// latency/errors in APM without needing any AWS-side IAM integration.
+	awstrace.AppendMiddleware(&awsCfg)
 
 	// JWT signing key is fetched once here, before lambda.Start — never
 	// inside the per-request handler — so it's loaded once per cold start
@@ -34,28 +42,52 @@ func main() {
 		SecretId: &appConfig.JWTSigningKeySecretName,
 	})
 	if err != nil {
-		log.Fatalf("failed to load jwt signing key: %v", err)
+		utils.ErrorLogger.Printf("failed to load jwt signing key: %v", err)
+		os.Exit(1)
 	}
 	jwtSecret := []byte(*secretValue.SecretString)
 
-	lambda.Start(func(_ context.Context, request events.APIGatewayV2CustomAuthorizerV2Request) (events.APIGatewayV2CustomAuthorizerSimpleResponse, error) {
-		return handleRequest(request, jwtSecret), nil
-	})
+	// ddlambda.WrapFunction lazily calls tracer.Start(...) itself on the
+	// first invocation of a cold execution environment (see
+	// internal/trace/listener.go in
+	// github.com/DataDog/dd-trace-go/contrib/aws/datadog-lambda-go/v2) and
+	// flushes/tears the tracer down around every invocation to survive
+	// freeze/thaw between them. Unlike a long-running service (contrast
+	// with video-processor-users-api/cmd/api/main.go, which calls
+	// tracer.Start explicitly before serving requests), this Lambda must
+	// NOT also call tracer.Start itself — that would race with the
+	// wrapper's own lazy start. Service/env/version are instead threaded
+	// in via ddlambda.Config.TracerOptions, which the wrapper appends to
+	// its own tracer.Start call.
+	ddCfg := &ddlambda.Config{
+		DDTraceEnabled: true,
+		TracerOptions: []tracer.StartOption{
+			tracer.WithService(appConfig.DDService),
+			tracer.WithEnv(appConfig.DDEnv),
+			tracer.WithServiceVersion(appConfig.DDVersion),
+		},
+	}
+
+	handler := func(ctx context.Context, request events.APIGatewayV2CustomAuthorizerV2Request) (events.APIGatewayV2CustomAuthorizerSimpleResponse, error) {
+		return handleRequest(ctx, request, jwtSecret), nil
+	}
+
+	lambda.Start(ddlambda.WrapFunction(handler, ddCfg))
 }
 
-func handleRequest(request events.APIGatewayV2CustomAuthorizerV2Request, jwtSecret []byte) events.APIGatewayV2CustomAuthorizerSimpleResponse {
+func handleRequest(ctx context.Context, request events.APIGatewayV2CustomAuthorizerV2Request, jwtSecret []byte) events.APIGatewayV2CustomAuthorizerSimpleResponse {
 	// API Gateway v2 always lowercases header names.
 	authHeader := request.Headers["authorization"]
 
 	tokenString, err := auth.ExtractBearerToken(authHeader)
 	if err != nil {
-		utils.ErrorLogger.Printf("rejected request: %v", err)
+		utils.ErrorLogger.PrintfContext(ctx, "rejected request: %v", err)
 		return deny()
 	}
 
 	claims, err := auth.ValidateToken(tokenString, jwtSecret)
 	if err != nil {
-		utils.ErrorLogger.Printf("rejected token %s: %v", redactToken(tokenString), err)
+		utils.ErrorLogger.PrintfContext(ctx, "rejected token %s: %v", redactToken(tokenString), err)
 		return deny()
 	}
 

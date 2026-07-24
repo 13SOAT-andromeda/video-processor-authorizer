@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ func TestHandleRequest(t *testing.T) {
 	t.Run("missing authorization header", func(t *testing.T) {
 		request := events.APIGatewayV2CustomAuthorizerV2Request{Headers: map[string]string{}}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		assert.False(t, response.IsAuthorized)
 	})
@@ -34,7 +35,7 @@ func TestHandleRequest(t *testing.T) {
 			Headers: map[string]string{"authorization": "not-bearer"},
 		}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		assert.False(t, response.IsAuthorized)
 	})
@@ -49,7 +50,7 @@ func TestHandleRequest(t *testing.T) {
 			Headers: map[string]string{"authorization": "Bearer " + tokenString},
 		}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		require.True(t, response.IsAuthorized)
 		assert.Equal(t, "user-123", response.Context["userId"])
@@ -66,7 +67,7 @@ func TestHandleRequest(t *testing.T) {
 			Headers: map[string]string{"authorization": "Bearer " + tokenString},
 		}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		assert.False(t, response.IsAuthorized)
 	})
@@ -81,7 +82,7 @@ func TestHandleRequest(t *testing.T) {
 			Headers: map[string]string{"authorization": "Bearer " + tokenString},
 		}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		assert.False(t, response.IsAuthorized)
 	})
@@ -96,7 +97,7 @@ func TestHandleRequest(t *testing.T) {
 			Headers: map[string]string{"authorization": "Bearer " + tokenString},
 		}
 
-		response := handleRequest(request, []byte(testSecret))
+		response := handleRequest(context.Background(), request, []byte(testSecret))
 
 		assert.False(t, response.IsAuthorized)
 	})
