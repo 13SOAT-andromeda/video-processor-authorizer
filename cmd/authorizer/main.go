@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -82,14 +83,18 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2CustomAuthori
 	tokenString, err := auth.ExtractBearerToken(authHeader)
 	if err != nil {
 		utils.ErrorLogger.PrintfContext(ctx, "rejected request: %v", err)
+		ddlambda.Metric("video_processor.authorizer.validations", 1, "result:deny", "reason:"+denyReason(err))
 		return deny()
 	}
 
 	claims, err := auth.ValidateToken(tokenString, jwtSecret)
 	if err != nil {
 		utils.ErrorLogger.PrintfContext(ctx, "rejected token %s: %v", redactToken(tokenString), err)
+		ddlambda.Metric("video_processor.authorizer.validations", 1, "result:deny", "reason:"+denyReason(err))
 		return deny()
 	}
+
+	ddlambda.Metric("video_processor.authorizer.validations", 1, "result:allow")
 
 	return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 		IsAuthorized: true,
@@ -102,6 +107,21 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2CustomAuthori
 
 func deny() events.APIGatewayV2CustomAuthorizerSimpleResponse {
 	return events.APIGatewayV2CustomAuthorizerSimpleResponse{IsAuthorized: false}
+}
+
+// denyReason maps a validation error to a low-cardinality tag value for the
+// video_processor.authorizer.validations metric.
+func denyReason(err error) string {
+	switch {
+	case errors.Is(err, auth.ErrMissingAuthHeader):
+		return "missing_auth_header"
+	case errors.Is(err, auth.ErrInvalidAuthHeader):
+		return "invalid_auth_header"
+	case errors.Is(err, auth.ErrTokenNotSession):
+		return "token_not_session"
+	default:
+		return "invalid_token"
+	}
 }
 
 // redactToken keeps only enough of a JWT for log correlation, never the
