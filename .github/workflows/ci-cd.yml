@@ -8,13 +8,16 @@ on:
 
 jobs:
   ci:
+    if: github.event_name == 'pull_request'
     uses: 13SOAT-andromeda/tech-andromeda-ci-config/.github/workflows/reusable-go-ci.yml@v1
-    with:
-      sonar-project-key: 13SOAT-andromeda_video-processor-authorizer
     secrets: inherit
 
   cd:
     needs: ci
+    if: always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped')
+    permissions:
+      contents: read
+      pull-requests: write
     uses: 13SOAT-andromeda/tech-andromeda-ci-config/.github/workflows/reusable-lambda-cd.yml@v1
     with:
       ecr-repository: video-processor-authorizer-prod

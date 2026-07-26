@@ -28,7 +28,7 @@ module "authorizer_lambda" {
     DD_VERSION            = var.image_tag
     DD_TRACE_ENABLED      = "true"
     DD_LOGS_INJECTION     = "true"
-    DD_API_KEY_SECRET_ARN = var.datadog_api_key_secret_arn
+    DD_API_KEY_SECRET_ARN = data.aws_secretsmanager_secret.datadog_api_key.arn
   }
 
   # AWS Academy sandbox does not allow creating custom IAM roles/policies in
