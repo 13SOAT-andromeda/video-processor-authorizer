@@ -21,7 +21,7 @@ func TestLoad(t *testing.T) {
 
 func TestLoad_DefaultRegion(t *testing.T) {
 	t.Setenv("JWT_SIGNING_KEY_SECRET_NAME", "jwt-signing-key-test")
-	os.Unsetenv("AWS_REGION")
+	_ = os.Unsetenv("AWS_REGION")
 
 	cfg := config.Load()
 
@@ -30,9 +30,9 @@ func TestLoad_DefaultRegion(t *testing.T) {
 
 func TestLoad_DatadogDefaults(t *testing.T) {
 	t.Setenv("JWT_SIGNING_KEY_SECRET_NAME", "jwt-signing-key-test")
-	os.Unsetenv("DD_SERVICE")
-	os.Unsetenv("DD_ENV")
-	os.Unsetenv("DD_VERSION")
+	_ = os.Unsetenv("DD_SERVICE")
+	_ = os.Unsetenv("DD_ENV")
+	_ = os.Unsetenv("DD_VERSION")
 
 	cfg := config.Load()
 

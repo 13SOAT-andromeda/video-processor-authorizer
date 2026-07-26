@@ -11,10 +11,10 @@ import (
 	awstrace "github.com/DataDog/dd-trace-go/contrib/aws/aws-sdk-go-v2/v2/aws"
 	ddlambda "github.com/DataDog/dd-trace-go/contrib/aws/datadog-lambda-go/v2"
 	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 
 	"github.com/13SOAT-andromeda/video-processor-authorizer/internal/auth"
 	"github.com/13SOAT-andromeda/video-processor-authorizer/internal/config"
