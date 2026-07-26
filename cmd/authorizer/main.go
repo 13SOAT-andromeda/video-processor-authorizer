@@ -1,3 +1,5 @@
+// Entry point for the authorizer Lambda.
+// Smoke-test comment: validating the CI/CD pull_request-only pipeline.
 package main
 
 import (
