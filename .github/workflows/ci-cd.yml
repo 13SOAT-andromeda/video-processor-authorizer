@@ -1,0 +1,24 @@
+name: CI/CD
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    uses: 13SOAT-andromeda/tech-andromeda-ci-config/.github/workflows/reusable-go-ci.yml@v1
+    with:
+      sonar-project-key: 13SOAT-andromeda_video-processor-authorizer
+    secrets: inherit
+
+  cd:
+    needs: ci
+    uses: 13SOAT-andromeda/tech-andromeda-ci-config/.github/workflows/reusable-lambda-cd.yml@v1
+    with:
+      ecr-repository: video-processor-authorizer-prod
+      platform: linux/arm64
+      terraform-dir: terraform/prod
+      terraform-run-tests: false
+    secrets: inherit

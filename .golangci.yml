@@ -1,0 +1,16 @@
+run:
+  timeout: 5m
+
+linters-settings:
+  gosec: {}
+
+linters:
+  disable-all: true
+  enable:
+    - gosec
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
