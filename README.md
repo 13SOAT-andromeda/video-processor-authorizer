@@ -174,9 +174,3 @@ A função se chama **`video-processor-authorizer`** — nome fixo, exato: é co
 
 **Ponto em aberto (2026-07-19):** como a imagem chega no ECR sem pipeline de CI (fluxo manual acima vs. GitHub Actions futuro) é decisão do time, rastreada na spec de design — fora de escopo, junto com *provisioned concurrency* (recomendada, não implementada).
 
----
-
-## 9. Documentação de design
-
-- [`docs/superpowers/specs/2026-07-11-authorizer-design.md`](docs/superpowers/specs/2026-07-11-authorizer-design.md) — contrato, regras de negócio, matriz de testes, decisões de Terraform (revisões ADR-011 e de implementação 2026-07-19).
-- [`docs/superpowers/plans/2026-07-19-authorizer-implementation.md`](docs/superpowers/plans/2026-07-19-authorizer-implementation.md) — plano de implementação executado.
